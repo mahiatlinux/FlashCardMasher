@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background-primary text-white antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background-secondary;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-accent-primary/50 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent-primary;
+  }
+
+  /* Focus styles */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-accent-primary ring-offset-2 ring-offset-background-primary;
+  }
+}
+
+@layer components {
+  .glass-effect {
+    @apply bg-white/5 backdrop-blur-sm border border-white/10 shadow-glass;
+  }
+
+  .neomorphic {
+    @apply bg-background-secondary shadow-neomorphic;
+  }
+
+  .neomorphic-sm {
+    @apply bg-background-secondary shadow-neomorphic-sm;
+  }
+
+  .gradient-text {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-accent-secondary to-teal-secondary;
+  }
+}
+
+/* Card flip perspective */
+.flip-container {
+  perspective: 1000px;
+}
+
+/* Preserve 3D */
+.card-inner {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Backface visibility */
+.card-front, .card-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Back side rotation */
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* Flipped state */
+.card-inner.flipped {
+  transform: rotateY(180deg);
+}
