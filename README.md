@@ -1,4 +1,10 @@
 # FlashCardMasher 🧠📑
+![image](https://github.com/user-attachments/assets/58bcb827-3285-483f-b1d0-142d0b3c9b87)
+
+![image](https://github.com/user-attachments/assets/151fa432-99e0-4d8c-82f4-e501fda4028b)
+
+![image](https://github.com/user-attachments/assets/7b68b463-67e7-4752-ab0f-6f2da0e395ec)
+
 
 ## Overview
 
