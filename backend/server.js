@@ -26,7 +26,8 @@ app.use(express.json({ limit: '50mb' }));
 app.use(morgan('dev'));
 
 // Serve static files from the build directory (for React production build)
-app.use(express.static(path.join(__dirname, 'build')));
+const buildDir = path.join(__dirname, 'build');
+app.use(express.static(buildDir));
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
@@ -321,23 +322,33 @@ app.get('/api/health', (req, res) => {
 
 // Catch-all route to serve the React app or 404 page
 app.get('*', (req, res) => {
-  const buildDir = path.join(__dirname, 'build');
   const indexPath = path.join(buildDir, 'index.html');
   const notFoundPath = path.join(buildDir, '404.html');
 
-  // Check for 404.html first
-  fs.access(notFoundPath, fs.constants.F_OK, (err404) => {
-    if (!err404) {
-      // 404.html exists
-      return res.status(404).sendFile(notFoundPath);
+  // First, check if the request is for an existing static asset
+  const requestedPath = path.join(buildDir, req.path);
+  
+  // Check if the requested path is a file that exists
+  fs.access(requestedPath, fs.constants.F_OK, (assetErr) => {
+    if (!assetErr) {
+      // If it's a valid file/asset, serve it directly
+      return res.sendFile(requestedPath);
     }
 
-    // If no 404.html, check for index.html
-    fs.access(indexPath, fs.constants.F_OK, (errIndex) => {
-      if (errIndex) {
-        // No index.html found
-        console.error('No index.html or 404.html found in build directory');
-        return res.status(404).send('Page not found');
+    // If not a static asset, serve index.html for client-side routing
+    fs.access(indexPath, fs.constants.F_OK, (indexErr) => {
+      if (indexErr) {
+        // No index.html found - try 404 page
+        fs.access(notFoundPath, fs.constants.F_OK, (notFoundErr) => {
+          if (!notFoundErr) {
+            // 404.html exists
+            return res.status(404).sendFile(notFoundPath);
+          }
+          
+          // Fallback if no 404 page
+          res.status(404).send('Page not found');
+        });
+        return;
       }
 
       // Serve index.html for client-side routing
