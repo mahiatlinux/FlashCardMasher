@@ -96,6 +96,7 @@ Found a bug? Please file an issue.
 
 ## Future Roadmap
 
+- [ ] Some UI problems
 - [ ] Multi-language support
 - [ ] Advanced analytics dashboard
 - [ ] Cloud sync and backup
