@@ -31,9 +31,25 @@ export const StudyMode: React.FC = () => {
     endTime: null as Date | null
   });
   
+  // Reset study session state
+  const resetStudySession = () => {
+    setCurrentCardIndex(0);
+    setIsComplete(false);
+    setStats({
+      total: deck?.cards.length || 0,
+      correct: 0,
+      incorrect: 0,
+      skipped: 0,
+      startTime: new Date(),
+      endTime: null
+    });
+  };
+  
   // Initialize study session if deck is present
   useEffect(() => {
     if (deck && deck.cards.length > 0) {
+      // Reset state when deck changes
+      resetStudySession();
       // For now, just use all cards in order
       // In a real app, you'd implement spaced repetition algorithm here
       setStudyCards(deck.cards);
@@ -42,7 +58,7 @@ export const StudyMode: React.FC = () => {
         total: deck.cards.length
       }));
     }
-  }, [deck]);
+  }, [deck, deckId]); // Added deckId as dependency to reset state when the URL param changes
   
   // If no deckId is provided, render deck selection
   if (!deckId) {
@@ -52,7 +68,7 @@ export const StudyMode: React.FC = () => {
   if (!deck) {
     return (
       <div className="py-10 px-4 text-center">
-        <div className="w-16 h-16 rounded-full bg-error-primary/20 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-full bg-error-primary/10 border border-error-primary/20 flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="w-8 h-8 text-error-primary" />
         </div>
         <h1 className="text-2xl font-bold mb-2">Deck Not Found</h1>
@@ -60,6 +76,7 @@ export const StudyMode: React.FC = () => {
         <Button 
           variant="primary"
           onClick={() => navigate('/dashboard')}
+          className="border border-white/20"
         >
           Return to Dashboard
         </Button>
@@ -70,7 +87,7 @@ export const StudyMode: React.FC = () => {
   if (deck.cards.length === 0) {
     return (
       <div className="py-10 px-4 text-center">
-        <div className="w-16 h-16 rounded-full bg-warning-primary/20 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-full bg-warning-primary/10 border border-warning-primary/20 flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="w-8 h-8 text-warning-primary" />
         </div>
         <h1 className="text-2xl font-bold mb-2">Empty Deck</h1>
@@ -78,6 +95,7 @@ export const StudyMode: React.FC = () => {
         <Button 
           variant="primary"
           onClick={() => navigate(`/decks/${deckId}`)}
+          className="border border-white/20"
         >
           Add Cards
         </Button>
@@ -123,16 +141,15 @@ export const StudyMode: React.FC = () => {
   };
   
   const handleRestartSession = () => {
-    setCurrentCardIndex(0);
-    setIsComplete(false);
-    setStats({
-      total: deck.cards.length,
-      correct: 0,
-      incorrect: 0,
-      skipped: 0,
-      startTime: new Date(),
-      endTime: null
-    });
+    resetStudySession();
+  };
+
+  // Navigate to study selection and reset state
+  const navigateToStudySelection = () => {
+    // First reset the state so if we come back to this component it's fresh
+    resetStudySession();
+    // Then navigate to the study deck selection
+    navigate('/study');
   };
   
   const formatStudyTime = () => {
@@ -154,19 +171,19 @@ export const StudyMode: React.FC = () => {
   const renderSummary = () => (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-success-primary/20 flex items-center justify-center mx-auto mb-4">
+        <div className="w-20 h-20 rounded-full bg-success-primary/10 border border-success-primary/20 flex items-center justify-center mx-auto mb-4">
           <Check className="w-10 h-10 text-success-primary" />
         </div>
         <h1 className="text-3xl font-bold mb-2">Study Complete!</h1>
         <p className="text-gray-400">You've completed this study session</p>
       </div>
       
-      <Card variant="neomorphic" className="mb-8">
+      <Card variant="modern" className="mb-8">
         <CardContent className="p-6">
           <h2 className="text-xl font-semibold mb-4">Session Summary</h2>
           
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-background-tertiary rounded-lg p-4">
+            <div className="bg-background-tertiary rounded-lg p-4 border border-white/10">
               <p className="text-sm text-gray-400 mb-1">Correct</p>
               <p className="text-2xl font-bold">{stats.correct} <span className="text-sm text-gray-400">/ {stats.total}</span></p>
               <div className="mt-2">
@@ -179,7 +196,7 @@ export const StudyMode: React.FC = () => {
               </div>
             </div>
             
-            <div className="bg-background-tertiary rounded-lg p-4">
+            <div className="bg-background-tertiary rounded-lg p-4 border border-white/10">
               <p className="text-sm text-gray-400 mb-1">Incorrect</p>
               <p className="text-2xl font-bold">{stats.incorrect} <span className="text-sm text-gray-400">/ {stats.total}</span></p>
               <div className="mt-2">
@@ -194,14 +211,14 @@ export const StudyMode: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-background-tertiary rounded-lg p-4">
+            <div className="bg-background-tertiary rounded-lg p-4 border border-white/10">
               <p className="text-sm text-gray-400 mb-1">Accuracy</p>
               <p className="text-2xl font-bold">
                 {stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0}%
               </p>
             </div>
             
-            <div className="bg-background-tertiary rounded-lg p-4">
+            <div className="bg-background-tertiary rounded-lg p-4 border border-white/10">
               <p className="text-sm text-gray-400 mb-1">Time Spent</p>
               <p className="text-2xl font-bold">
                 {formatStudyTime()}
@@ -216,6 +233,7 @@ export const StudyMode: React.FC = () => {
           variant="outline"
           leftIcon={<ChevronLeft className="w-5 h-5" />}
           onClick={() => navigate(`/decks/${deckId}`)}
+          className="border border-white/20"
         >
           Back to Deck
         </Button>
@@ -223,6 +241,7 @@ export const StudyMode: React.FC = () => {
         <Button
           variant="primary"
           onClick={handleRestartSession}
+          className="border border-white/20"
         >
           Study Again
         </Button>
@@ -231,7 +250,8 @@ export const StudyMode: React.FC = () => {
       <div className="flex justify-center mt-6">
         <Button
           variant="secondary"
-          onClick={() => navigate('/study')}
+          onClick={navigateToStudySelection}
+          className="border border-white/20"
         >
           Study Different Deck
         </Button>
@@ -276,7 +296,8 @@ export const StudyMode: React.FC = () => {
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => navigate('/study')}
+          onClick={navigateToStudySelection}
+          className="border border-white/20"
         >
           Switch Deck
         </Button>
@@ -327,13 +348,13 @@ const DeckSelectionView: React.FC<{ decks: FlashcardDeck[], navigate: (path: str
           placeholder="Search decks..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-background-tertiary text-white rounded-lg border border-gray-700 py-2 px-4 placeholder-gray-500 focus:outline-none focus:border-accent-primary"
+          className="w-full bg-background-tertiary text-white rounded-lg border border-white/20 py-2 px-4 placeholder-gray-500 focus:outline-none focus:border-accent-primary"
         />
       </div>
       
       {sortedDecks.length === 0 ? (
         <div className="text-center py-8">
-          <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-full bg-background-tertiary border border-white/20 flex items-center justify-center mx-auto mb-4">
             <Book className="w-8 h-8 text-gray-500" />
           </div>
           <h2 className="text-xl font-bold mb-2">No Flashcard Decks</h2>
@@ -343,6 +364,7 @@ const DeckSelectionView: React.FC<{ decks: FlashcardDeck[], navigate: (path: str
           <Button
             variant="primary"
             onClick={() => navigate('/create')}
+            className="border border-white/20"
           >
             Create Deck
           </Button>
@@ -350,62 +372,47 @@ const DeckSelectionView: React.FC<{ decks: FlashcardDeck[], navigate: (path: str
       ) : (
         <div className="grid gap-4 max-w-2xl mx-auto">
           {sortedDecks.map(deck => (
-            <Card 
+            <div 
               key={deck.id} 
-              variant="neomorphic"
-              className={`transition-all hover:shadow-neomorphic-lg cursor-pointer ${
+              className={`rounded-lg bg-background-secondary border border-white/20 transition-all hover:shadow-md hover:border-white/30 cursor-pointer overflow-hidden ${
                 deck.cards.length === 0 ? 'opacity-60' : ''
               }`}
               onClick={() => {
-                if (deck.cards.length > 0) {
-                  navigate(`/study/${deck.id}`);
-                } else {
-                  navigate(`/decks/${deck.id}`);
-                }
+                // Clicking the card now navigates to view the deck
+                navigate(`/decks/${deck.id}`);
               }}
             >
-              <CardContent className="p-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-semibold">{deck.name}</h3>
-                    <p className="text-sm text-gray-400 line-clamp-1">{deck.description || 'No description'}</p>
-                    
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {deck.tags.slice(0, 2).map((tag, index) => (
-                        <span 
-                          key={index} 
-                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-accent-primary/20 text-accent-secondary"
-                        >
-                          <Tag className="w-3 h-3 mr-1" />
-                          {tag}
-                        </span>
-                      ))}
-                      {deck.tags.length > 2 && (
-                        <span className="text-xs text-gray-400">
-                          +{deck.tags.length - 2} more
-                        </span>
-                      )}
-                    </div>
+              <div className="p-4 flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold">{deck.name}</h3>
+                  <p className="text-sm text-gray-400 line-clamp-1">{deck.description || 'No description'}</p>
+                  
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {deck.tags.slice(0, 2).map((tag, index) => (
+                      <span 
+                        key={index} 
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-white/5 text-accent-secondary border border-white/20"
+                      >
+                        <Tag className="w-3 h-3 mr-1" />
+                        {tag}
+                      </span>
+                    ))}
+                    {deck.tags.length > 2 && (
+                      <span className="text-xs text-gray-400">
+                        +{deck.tags.length - 2} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center text-sm text-gray-400 mb-2">
+                    <Book className="w-4 h-4 mr-1" />
+                    {deck.cards.length} cards
                   </div>
                   
-                  <div className="flex flex-col items-end">
-                    <div className="flex items-center text-sm text-gray-400 mb-2">
-                      <Book className="w-4 h-4 mr-1" />
-                      {deck.cards.length} cards
-                    </div>
-                    
-                    {deck.cards.length > 0 ? (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Stop event from bubbling to the card
-                          navigate(`/study/${deck.id}`);
-                        }}
-                      >
-                        Study Now
-                      </Button>
-                    ) : (
+                  {deck.cards.length > 0 ? (
+                    <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -413,14 +420,38 @@ const DeckSelectionView: React.FC<{ decks: FlashcardDeck[], navigate: (path: str
                           e.stopPropagation(); // Stop event from bubbling to the card
                           navigate(`/decks/${deck.id}`);
                         }}
+                        className="border border-white/20"
                       >
-                        Add Cards
+                        View Deck
                       </Button>
-                    )}
-                  </div>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Stop event from bubbling to the card
+                          navigate(`/study/${deck.id}`);
+                        }}
+                        className="border border-white/20"
+                      >
+                        Study Now
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Stop event from bubbling to the card
+                        navigate(`/decks/${deck.id}`);
+                      }}
+                      className="border border-white/20"
+                    >
+                      Add Cards
+                    </Button>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -430,6 +461,7 @@ const DeckSelectionView: React.FC<{ decks: FlashcardDeck[], navigate: (path: str
           variant="outline"
           leftIcon={<ChevronLeft className="w-5 h-5" />}
           onClick={() => navigate('/dashboard')}
+          className="border border-white/20"
         >
           Back to Dashboard
         </Button>

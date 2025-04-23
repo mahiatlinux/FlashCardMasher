@@ -38,6 +38,7 @@ export const CreateFlashcards: React.FC = () => {
   const [step, setStep] = useState<'input' | 'options' | 'processing'>('input');
   const [apiStatus, setApiStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [createdDeckId, setCreatedDeckId] = useState<string | null>(null);
+  const [isFlipped, setIsFlipped] = useState(false);
   
   // Check API connection on component mount
   useEffect(() => {
@@ -126,7 +127,7 @@ export const CreateFlashcards: React.FC = () => {
   const renderApiStatus = () => {
     if (apiStatus === 'checking') {
       return (
-        <div className="bg-warning-primary/10 border border-warning-primary rounded-lg p-3 mb-6">
+        <div className="bg-warning-primary/10 border border-warning-primary/20 rounded-lg p-3 mb-6">
           <div className="flex items-center">
             <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-warning-primary mr-2"></div>
             <p className="text-sm text-warning-primary">Connecting to AI service...</p>
@@ -135,7 +136,7 @@ export const CreateFlashcards: React.FC = () => {
       );
     } else if (apiStatus === 'error') {
       return (
-        <div className="bg-error-primary/10 border border-error-primary rounded-lg p-3 mb-6">
+        <div className="bg-error-primary/10 border border-error-primary/20 rounded-lg p-3 mb-6">
           <div className="flex items-center">
             <AlertTriangle className="w-4 h-4 text-error-primary mr-2" />
             <p className="text-sm text-error-primary">
@@ -160,7 +161,7 @@ export const CreateFlashcards: React.FC = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <Card variant="default">
+          <Card variant="modern">
             <CardHeader>
               <CardTitle>Deck Information</CardTitle>
             </CardHeader>
@@ -172,6 +173,7 @@ export const CreateFlashcards: React.FC = () => {
                   onChange={(e) => setDeckName(e.target.value)}
                   placeholder="Enter a name for your deck"
                   fullWidth
+                  className="border border-white/20"
                 />
                 
                 <TextArea
@@ -180,12 +182,13 @@ export const CreateFlashcards: React.FC = () => {
                   onChange={(e) => setDeckDescription(e.target.value)}
                   placeholder="Enter a description for your deck"
                   fullWidth
+                  className="border border-white/20"
                 />
               </div>
             </CardContent>
           </Card>
           
-          <Card variant="default" className="mt-6">
+          <Card variant="modern" className="mt-6">
             <CardHeader>
               <CardTitle>Input Type</CardTitle>
             </CardHeader>
@@ -197,7 +200,7 @@ export const CreateFlashcards: React.FC = () => {
                     className={`flex flex-col items-center justify-center p-4 rounded-xl border ${
                       inputFormat === type.id
                         ? 'border-accent-primary bg-accent-primary/10'
-                        : 'border-gray-700 hover:border-gray-600'
+                        : 'border-white/20 hover:border-white/30'
                     }`}
                     onClick={() => handleInputTypeChange(type.id)}
                   >
@@ -213,6 +216,7 @@ export const CreateFlashcards: React.FC = () => {
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="Paste your study material here..."
                   fullWidth
+                  className="border border-white/20"
                 />
               )}
               
@@ -232,6 +236,7 @@ export const CreateFlashcards: React.FC = () => {
                   placeholder="https://example.com/study-material"
                   fullWidth
                   leftIcon={<LinkIcon className="w-4 h-4" />}
+                  className="border border-white/20"
                 />
               )}
             </CardContent>
@@ -239,7 +244,7 @@ export const CreateFlashcards: React.FC = () => {
         </div>
         
         <div>
-          <Card variant="glass">
+          <Card variant="modern">
             <CardHeader>
               <CardTitle>Preview</CardTitle>
             </CardHeader>
@@ -247,7 +252,7 @@ export const CreateFlashcards: React.FC = () => {
               {fileUploads.length > 0 || inputText || inputUrl ? (
                 <div>
                   {fileUploads.map((file) => (
-                    <div key={file.id} className="mb-4 p-3 bg-background-tertiary rounded-lg">
+                    <div key={file.id} className="mb-4 p-3 bg-background-tertiary border border-white/10 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
                           <FileText className="w-5 h-5 mr-2" />
@@ -257,6 +262,7 @@ export const CreateFlashcards: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeFileUpload(file.id)}
+                          className="hover:bg-white/5"
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -265,13 +271,13 @@ export const CreateFlashcards: React.FC = () => {
                   ))}
                   
                   {inputText && (
-                    <div className="p-3 bg-background-tertiary rounded-lg">
+                    <div className="p-3 bg-background-tertiary border border-white/10 rounded-lg">
                       <p className="text-sm text-gray-300 line-clamp-4">{inputText.substring(0, 200)}{inputText.length > 200 ? '...' : ''}</p>
                     </div>
                   )}
                   
                   {inputUrl && (
-                    <div className="p-3 bg-background-tertiary rounded-lg">
+                    <div className="p-3 bg-background-tertiary border border-white/10 rounded-lg">
                       <div className="flex items-center">
                         <LinkIcon className="w-5 h-5 mr-2 text-accent-primary" />
                         <span className="text-sm text-gray-300 truncate">{inputUrl}</span>
@@ -281,7 +287,7 @@ export const CreateFlashcards: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 rounded-full bg-background-tertiary border border-white/20 flex items-center justify-center mx-auto mb-4">
                     <FileText className="w-8 h-8 text-gray-500" />
                   </div>
                   <p className="text-gray-400">No content added yet</p>
@@ -300,6 +306,7 @@ export const CreateFlashcards: React.FC = () => {
           rightIcon={<ArrowRight className="w-5 h-5" />}
           onClick={handleNextStep}
           disabled={isNextDisabled()}
+          className="border border-white/20"
         >
           Continue
         </Button>
@@ -324,7 +331,7 @@ export const CreateFlashcards: React.FC = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
-            <Card variant="default">
+            <Card variant="modern">
               <CardHeader>
                 <CardTitle>Generation Options</CardTitle>
               </CardHeader>
@@ -341,7 +348,7 @@ export const CreateFlashcards: React.FC = () => {
                       step="5"
                       value={generationOptions.cardCount}
                       onChange={(e) => setGenerationOptions({ cardCount: parseInt(e.target.value) })}
-                      className="w-full"
+                      className="w-full accent-accent-primary"
                     />
                     <div className="flex justify-between text-sm text-gray-400 mt-1">
                       <span>5</span>
@@ -358,10 +365,10 @@ export const CreateFlashcards: React.FC = () => {
                       {difficultyOptions.map((option) => (
                         <button
                           key={option.value}
-                          className={`py-2 px-3 rounded-lg text-sm transition-colors ${
+                          className={`py-2 px-3 rounded-lg text-sm transition-colors border ${
                             generationOptions.difficulty === option.value
-                              ? 'bg-accent-primary text-white'
-                              : 'bg-background-tertiary text-gray-300 hover:bg-background-tertiary/80'
+                              ? 'bg-accent-primary text-white border-accent-primary'
+                              : 'bg-background-tertiary text-gray-300 hover:bg-background-tertiary/80 border-white/20'
                           }`}
                           onClick={() => setGenerationOptions({ difficulty: option.value })}
                         >
@@ -376,26 +383,26 @@ export const CreateFlashcards: React.FC = () => {
                       Flashcard Format
                     </label>
                     <div className="space-y-2">
-                      <div className="flex items-center">
+                      <div className="flex items-center p-2 rounded-lg border border-white/20 hover:border-white/30 transition-colors">
                         <input
                           type="checkbox"
                           id="term-definition"
                           checked={generationOptions.termDefinition}
                           onChange={(e) => setGenerationOptions({ termDefinition: e.target.checked })}
-                          className="mr-2"
+                          className="mr-2 accent-accent-primary"
                         />
                         <label htmlFor="term-definition" className="text-sm text-gray-300">
                           Term-Definition Pairs
                         </label>
                       </div>
                       
-                      <div className="flex items-center">
+                      <div className="flex items-center p-2 rounded-lg border border-white/20 hover:border-white/30 transition-colors">
                         <input
                           type="checkbox"
                           id="question-answer"
                           checked={generationOptions.questionAnswer}
                           onChange={(e) => setGenerationOptions({ questionAnswer: e.target.checked })}
-                          className="mr-2"
+                          className="mr-2 accent-accent-primary"
                         />
                         <label htmlFor="question-answer" className="text-sm text-gray-300">
                           Question-Answer Format
@@ -409,30 +416,66 @@ export const CreateFlashcards: React.FC = () => {
           </div>
           
           <div>
-            <Card variant="glass">
+            <Card variant="modern">
               <CardHeader>
                 <CardTitle>Sample Card Preview</CardTitle>
               </CardHeader>
-              <CardContent className="pb-8">
-                <div className="flip-container w-full h-40 cursor-pointer">
-                  <div className="card-inner">
-                    <div className="card-front absolute w-full h-full rounded-xl bg-background-tertiary border border-gray-700 p-5 flex flex-col shadow-neomorphic-sm">
-                      <div className="flex-1 flex items-center justify-center">
-                        <h3 className="text-lg font-semibold text-center">What is the primary function of neurons?</h3>
+              <CardContent className="p-6">
+                {/* Flipping Card Preview */}
+                <style jsx>{`
+                  .flip-card {
+                    perspective: 1000px;
+                  }
+                  .flip-card-inner {
+                    transform-style: preserve-3d;
+                    transition: transform 0.6s;
+                  }
+                  .flip-card-inner.flipped {
+                    transform: rotateY(180deg);
+                  }
+                  .flip-card-front, .flip-card-back {
+                    backface-visibility: hidden;
+                    -webkit-backface-visibility: hidden;
+                  }
+                  .flip-card-back {
+                    transform: rotateY(180deg);
+                  }
+                `}</style>
+                <div className="flip-card w-full h-48 cursor-pointer mx-auto mb-4" onClick={() => setIsFlipped(!isFlipped)}>
+                  <div className={`flip-card-inner w-full h-full relative ${isFlipped ? 'flipped' : ''}`}>
+                    {/* Card Front */}
+                    <div className="flip-card-front absolute inset-0 w-full h-full rounded-lg bg-background-secondary border border-white/20 p-6 flex items-center justify-center">
+                      <div className="text-center">
+                        <span className="inline-block px-3 py-1 rounded-full text-xs bg-accent-primary/10 border border-accent-primary/20 text-accent-secondary mb-4">
+                          {generationOptions.difficulty}
+                        </span>
+                        <h3 className="text-lg font-semibold">What is the primary function of neurons?</h3>
+                        <p className="text-xs text-gray-400 mt-4">Tap to flip</p>
+                      </div>
+                    </div>
+                    
+                    {/* Card Back */}
+                    <div className="flip-card-back absolute inset-0 w-full h-full rounded-lg bg-background-secondary border border-white/20 p-6 flex items-center justify-center">
+                      <div className="text-center">
+                        <p className="text-gray-400 text-sm mb-3">Neurons transmit information through electrical and chemical signals</p>
+                        <div className="w-full h-px bg-white/10 my-3"></div>
+                        <p className="text-sm">They are the basic working units of the brain and nervous system that receive and transmit information.</p>
+                        <p className="text-xs text-gray-400 mt-4">Tap to flip back</p>
                       </div>
                     </div>
                   </div>
                 </div>
+                <p className="text-center text-xs text-gray-400">Click the card to flip it</p>
               </CardContent>
             </Card>
             
-            <Card variant="neomorphic" className="mt-6">
+            <Card variant="modern" className="mt-6">
               <CardHeader>
                 <CardTitle>AI Generation</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 rounded-full bg-accent-primary/20 flex items-center justify-center mr-3">
+                  <div className="w-10 h-10 rounded-full bg-accent-primary/10 border border-accent-primary/20 flex items-center justify-center mr-3">
                     <Brain className="w-5 h-5 text-accent-primary" />
                   </div>
                   <div>
@@ -441,7 +484,7 @@ export const CreateFlashcards: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="bg-background-tertiary rounded-lg p-3">
+                <div className="bg-background-tertiary rounded-lg p-3 border border-white/10">
                   <p className="text-sm text-gray-400 mb-2">Expected output:</p>
                   <ul className="text-sm space-y-1 text-gray-300">
                     <li>• {generationOptions.cardCount} flashcards</li>
@@ -463,6 +506,7 @@ export const CreateFlashcards: React.FC = () => {
             variant="outline"
             size="lg"
             onClick={handlePrevStep}
+            className="border border-white/20"
           >
             Back
           </Button>
@@ -472,6 +516,7 @@ export const CreateFlashcards: React.FC = () => {
             size="lg"
             rightIcon={<Brain className="w-5 h-5" />}
             onClick={handleNextStep}
+            className="border border-white/20"
           >
             Generate Flashcards
           </Button>
@@ -487,12 +532,12 @@ export const CreateFlashcards: React.FC = () => {
         <p className="text-gray-400">Our AI is processing your content and creating flashcards</p>
       </div>
       
-      <Card variant="neomorphic" className="mb-8">
+      <Card variant="modern" className="mb-8">
         <CardContent className="p-8">
           <div className="flex flex-col items-center justify-center">
             {processingState.status === 'processing' && (
               <>
-                <div className="w-20 h-20 rounded-full bg-accent-primary/20 flex items-center justify-center mb-6">
+                <div className="w-20 h-20 rounded-full bg-accent-primary/10 border border-accent-primary/20 flex items-center justify-center mb-6">
                   <Brain className="w-10 h-10 text-accent-primary animate-pulse" />
                 </div>
                 
@@ -513,7 +558,7 @@ export const CreateFlashcards: React.FC = () => {
             
             {processingState.status === 'success' && (
               <>
-                <div className="w-20 h-20 rounded-full bg-success-primary/20 flex items-center justify-center mb-6">
+                <div className="w-20 h-20 rounded-full bg-success-primary/10 border border-success-primary/20 flex items-center justify-center mb-6">
                   <Check className="w-10 h-10 text-success-primary" />
                 </div>
                 
@@ -530,6 +575,7 @@ export const CreateFlashcards: React.FC = () => {
                       navigate('/dashboard');
                     }
                   }}
+                  className="border border-white/20"
                 >
                   View Your Deck
                 </Button>
@@ -538,7 +584,7 @@ export const CreateFlashcards: React.FC = () => {
             
             {processingState.status === 'error' && (
               <>
-                <div className="w-20 h-20 rounded-full bg-error-primary/20 flex items-center justify-center mb-6">
+                <div className="w-20 h-20 rounded-full bg-error-primary/10 border border-error-primary/20 flex items-center justify-center mb-6">
                   <AlertTriangle className="w-10 h-10 text-error-primary" />
                 </div>
                 
@@ -549,6 +595,7 @@ export const CreateFlashcards: React.FC = () => {
                   variant="outline"
                   size="lg"
                   onClick={handlePrevStep}
+                  className="border border-white/20"
                 >
                   Try Again
                 </Button>
@@ -559,7 +606,7 @@ export const CreateFlashcards: React.FC = () => {
       </Card>
       
       {processingState.status === 'processing' && (
-        <Card variant="glass">
+        <Card variant="modern">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Processing Details</h3>
@@ -574,12 +621,12 @@ export const CreateFlashcards: React.FC = () => {
                 
                 return (
                   <div key={index} className="flex items-center">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 border ${
                       isComplete 
-                        ? 'bg-accent-primary' 
+                        ? 'bg-accent-primary border-accent-primary' 
                         : isActive 
-                          ? 'bg-accent-primary/50 animate-pulse' 
-                          : 'bg-gray-700'
+                          ? 'bg-accent-primary/50 border-accent-primary/50 animate-pulse' 
+                          : 'bg-transparent border-white/20'
                     }`}>
                       {isComplete ? (
                         <Check className="w-4 h-4 text-white" />

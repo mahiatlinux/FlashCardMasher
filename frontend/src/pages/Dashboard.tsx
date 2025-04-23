@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Plus, Book, Clock, Calendar, Search, Tag, MoreVertical, Trash, Edit,
@@ -20,6 +20,13 @@ export const Dashboard: React.FC = () => {
   const [deckMenuOpen, setDeckMenuOpen] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'decks'>('overview');
+
+  // Auto-switch to "decks" tab when searching
+  useEffect(() => {
+    if (searchQuery.trim() !== '') {
+      setActiveTab('decks');
+    }
+  }, [searchQuery]);
 
   // Filter decks based on search query
   const filteredDecks = decks.filter(deck => 
@@ -230,6 +237,172 @@ export const Dashboard: React.FC = () => {
   const closeAllMenus = () => {
     setDeckMenuOpen(null);
   };
+
+  // Uniform Deck Card component to ensure consistent appearance
+  const DeckCard = ({ deck }: { deck: FlashcardDeck }) => {
+    if (deleteConfirmation === deck.id) {
+      return (
+        <Card variant="modern" className="border-error-primary/40 bg-background-tertiary/80 h-full rounded-lg border border-white/20">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-error-primary/10 flex items-center justify-center mx-auto mb-4 border border-white/20">
+                <Trash className="w-6 h-6 text-error-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Delete Deck?</h3>
+              <p className="text-gray-400 mb-6">
+                Are you sure you want to delete "{deck.name}"? This action cannot be undone.
+              </p>
+              <div className="flex justify-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={cancelDeleteDeck}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="error"
+                  onClick={() => handleDeleteDeck(deck.id)}
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    
+    return (
+      <div 
+        className="h-full transition-all hover:shadow-md rounded-lg border border-white/20 hover:border-white/30 cursor-pointer overflow-hidden bg-background-secondary"
+        onClick={() => navigate(`/decks/${deck.id}`)}
+      >
+        <div className="flex flex-col h-full">
+          {/* Card Header */}
+          <div className="p-4 border-b border-white/10 flex justify-between items-start">
+            <h3 className="text-lg font-semibold truncate pr-2">{deck.name}</h3>
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <button 
+                className="p-2 hover:bg-white/5 rounded-full text-gray-400 hover:text-white transition-colors border border-transparent hover:border-white/10"
+                onClick={(e) => toggleDeckMenu(deck.id, e)}
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+              
+              {deckMenuOpen === deck.id && (
+                <div 
+                  className="absolute right-0 top-10 z-10 bg-background-secondary border border-white/20 shadow-md rounded-lg overflow-hidden w-48"
+                >
+                  <div className="py-1">
+                    <Link 
+                      to={`/decks/${deck.id}`}
+                      className="flex items-center px-4 py-2 text-sm hover:bg-white/5 w-full text-left"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Deck
+                    </Link>
+                    <button 
+                      className="flex items-center px-4 py-2 text-sm hover:bg-white/5 w-full text-left text-error-primary"
+                      onClick={(e) => confirmDeleteDeck(deck.id, e)}
+                    >
+                      <Trash className="w-4 h-4 mr-2" />
+                      Delete Deck
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Card Content */}
+          <div className="p-4 flex-grow">
+            <p className="text-gray-400 text-sm line-clamp-2 mb-4">
+              {deck.description || 'No description'}
+            </p>
+            
+            <div className="flex flex-wrap gap-2 mb-4">
+              {deck.tags.slice(0, 3).map((tag, index) => (
+                <span 
+                  key={index} 
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-white/5 text-accent-secondary border border-white/20"
+                >
+                  <Tag className="w-3 h-3 mr-1" />
+                  {tag}
+                </span>
+              ))}
+              {deck.tags.length > 3 && (
+                <span className="text-xs text-gray-400">
+                  +{deck.tags.length - 3} more
+                </span>
+              )}
+            </div>
+          </div>
+          
+          {/* Card Stats */}
+          <div className="px-4 py-3 border-t border-white/10">
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center text-sm text-gray-400">
+                <Book className="w-4 h-4 mr-1" />
+                {deck.cards.length} cards
+              </div>
+              
+              <div className="flex items-center text-sm text-gray-400">
+                {deck.lastStudied ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-1" />
+                    Last: {formatRelativeTime(deck.lastStudied)}
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="w-4 h-4 mr-1" />
+                    Created: {formatDate(deck.createdAt)}
+                  </>
+                )}
+              </div>
+            </div>
+            
+            {/* Card mastery indicator */}
+            {deck.cards.length > 0 && (
+              <div>
+                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                  <span>Card Mastery</span>
+                  <span>{Math.round((deck.cards.filter(card => card.confidence >= 2).length / deck.cards.length) * 100)}%</span>
+                </div>
+                <ProgressBar
+                  value={deck.cards.filter(card => card.confidence >= 2).length}
+                  max={deck.cards.length}
+                  size="sm"
+                  variant="success"
+                />
+              </div>
+            )}
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-px mt-auto">
+            <button
+              className="bg-accent-primary hover:bg-accent-primary/90 text-white h-12 border-r border-white/10 text-sm font-medium transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/study/${deck.id}`);
+              }}
+            >
+              Study Now
+            </button>
+            <button
+              className="bg-accent-secondary hover:bg-accent-secondary/90 text-white h-12 text-sm font-medium transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/decks/${deck.id}`);
+              }}
+            >
+              View Deck
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
   
   const renderOverviewTab = () => (
     <>
@@ -238,7 +411,7 @@ export const Dashboard: React.FC = () => {
         <h2 className="text-xl font-bold mb-4">Study Statistics</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Cards Studied */}
-          <Card variant="neomorphic">
+          <Card variant="modern">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -248,7 +421,7 @@ export const Dashboard: React.FC = () => {
                     of {studyStats.totalCards} total cards
                   </p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-accent-primary/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-accent-primary/10 flex items-center justify-center border border-white/20">
                   <Book className="w-5 h-5 text-accent-primary" />
                 </div>
               </div>
@@ -263,7 +436,7 @@ export const Dashboard: React.FC = () => {
           </Card>
           
           {/* Total Study Time */}
-          <Card variant="neomorphic">
+          <Card variant="modern">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -275,7 +448,7 @@ export const Dashboard: React.FC = () => {
                     {studyStats.studiedToday ? '✓ Studied today' : 'No study session today'}
                   </p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-warning-primary/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-warning-primary/10 flex items-center justify-center border border-white/20">
                   <ClockIcon className="w-5 h-5 text-warning-primary" />
                 </div>
               </div>
@@ -283,7 +456,7 @@ export const Dashboard: React.FC = () => {
           </Card>
           
           {/* Average Accuracy */}
-          <Card variant="neomorphic">
+          <Card variant="modern">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -295,7 +468,7 @@ export const Dashboard: React.FC = () => {
                     Based on confidence ratings
                   </p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-success-primary/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-success-primary/10 flex items-center justify-center border border-white/20">
                   <Award className="w-5 h-5 text-success-primary" />
                 </div>
               </div>
@@ -312,7 +485,7 @@ export const Dashboard: React.FC = () => {
           </Card>
           
           {/* Study Streak */}
-          <Card variant="neomorphic">
+          <Card variant="modern">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -324,7 +497,7 @@ export const Dashboard: React.FC = () => {
                     Consecutive days studied
                   </p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-accent-primary/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-accent-primary/10 flex items-center justify-center border border-white/20">
                   <Activity className="w-5 h-5 text-accent-primary" />
                 </div>
               </div>
@@ -336,7 +509,7 @@ export const Dashboard: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Accuracy Chart */}
-        <Card variant="neomorphic" className="lg:col-span-2">
+        <Card variant="modern" className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Study Accuracy (Last 7 Days)</CardTitle>
           </CardHeader>
@@ -373,7 +546,7 @@ export const Dashboard: React.FC = () => {
         </Card>
         
         {/* Confidence Distribution */}
-        <Card variant="neomorphic">
+        <Card variant="modern">
           <CardHeader>
             <CardTitle>Confidence Distribution</CardTitle>
           </CardHeader>
@@ -406,7 +579,7 @@ export const Dashboard: React.FC = () => {
       
       {/* Study Time by Day */}
       <div className="mb-8">
-        <Card variant="neomorphic">
+        <Card variant="modern">
           <CardHeader>
             <CardTitle>Study Time by Day</CardTitle>
           </CardHeader>
@@ -438,51 +611,7 @@ export const Dashboard: React.FC = () => {
           <h2 className="text-xl font-bold mb-4">Recently Studied Decks</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {studyStats.recentDecks.map(deck => (
-              <Card 
-                key={deck.id} 
-                variant="neomorphic" 
-                className="transition-all hover:shadow-neomorphic-lg cursor-pointer"
-                onClick={() => navigate(`/decks/${deck.id}`)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-semibold truncate">{deck.name}</h3>
-                    <span className="text-xs text-gray-400">
-                      {deck.lastStudied ? formatRelativeTime(deck.lastStudied) : ''}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Book className="w-4 h-4 mr-1 text-gray-400" />
-                      <span className="text-sm text-gray-400">{deck.cards.length} cards</span>
-                    </div>
-                    
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/study/${deck.id}`);
-                      }}
-                    >
-                      Study Again
-                    </Button>
-                  </div>
-                  
-                  {/* Performance Indicators */}
-                  <div className="mt-3 flex items-center text-xs text-gray-400">
-                    <div className="flex items-center mr-3">
-                      <CheckCircle className="w-3 h-3 text-success-primary mr-1" />
-                      {deck.cards.filter(card => card.confidence >= 2).length} correct
-                    </div>
-                    <div className="flex items-center">
-                      <XCircle className="w-3 h-3 text-error-primary mr-1" />
-                      {deck.cards.filter(card => card.confidence >= 0 && card.confidence < 2).length} incorrect
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <DeckCard key={deck.id} deck={deck} />
             ))}
           </div>
         </div>
@@ -493,165 +622,7 @@ export const Dashboard: React.FC = () => {
   const renderDeckList = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {filteredDecks.map(deck => (
-        <div key={deck.id} className="relative">
-          {deleteConfirmation === deck.id ? (
-            <Card variant="neomorphic" className="border-error-primary bg-background-tertiary/80">
-              <CardContent className="p-6">
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-full bg-error-primary/20 flex items-center justify-center mx-auto mb-4">
-                    <Trash className="w-6 h-6 text-error-primary" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Delete Deck?</h3>
-                  <p className="text-gray-400 mb-6">
-                    Are you sure you want to delete "{deck.name}"? This action cannot be undone.
-                  </p>
-                  <div className="flex justify-center gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={cancelDeleteDeck}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="error"
-                      onClick={() => handleDeleteDeck(deck.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card 
-              variant="neomorphic" 
-              className="h-full transition-all hover:shadow-neomorphic-lg cursor-pointer"
-              onClick={() => navigate(`/decks/${deck.id}`)}
-            >
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="truncate">{deck.name}</CardTitle>
-                  <div className="relative" onClick={(e) => e.stopPropagation()}>
-                    <button 
-                      className="p-2 hover:bg-background-tertiary rounded-full text-gray-400 hover:text-white transition-colors"
-                      onClick={(e) => toggleDeckMenu(deck.id, e)}
-                    >
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
-                    
-                    {deckMenuOpen === deck.id && (
-                      <div 
-                        className="absolute right-0 top-10 z-10 bg-background-secondary shadow-neomorphic rounded-lg overflow-hidden w-48"
-                      >
-                        <div className="py-1">
-                          <Link 
-                            to={`/decks/${deck.id}`}
-                            className="flex items-center px-4 py-2 text-sm hover:bg-background-tertiary w-full text-left"
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Deck
-                          </Link>
-                          <button 
-                            className="flex items-center px-4 py-2 text-sm hover:bg-background-tertiary w-full text-left text-error-primary"
-                            onClick={(e) => confirmDeleteDeck(deck.id, e)}
-                          >
-                            <Trash className="w-4 h-4 mr-2" />
-                            Delete Deck
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <p className="text-gray-400 line-clamp-2 mb-4">
-                  {deck.description || 'No description'}
-                </p>
-                
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {deck.tags.slice(0, 3).map((tag, index) => (
-                    <span 
-                      key={index} 
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-accent-primary/20 text-accent-secondary"
-                    >
-                      <Tag className="w-3 h-3 mr-1" />
-                      {tag}
-                    </span>
-                  ))}
-                  {deck.tags.length > 3 && (
-                    <span className="text-xs text-gray-400">
-                      +{deck.tags.length - 3} more
-                    </span>
-                  )}
-                </div>
-                
-                <div className="flex justify-between items-center mt-auto">
-                  <div className="flex items-center text-sm text-gray-400">
-                    <Book className="w-4 h-4 mr-1" />
-                    {deck.cards.length} cards
-                  </div>
-                  
-                  <div className="flex items-center text-sm text-gray-400">
-                    {deck.lastStudied ? (
-                      <>
-                        <Clock className="w-4 h-4 mr-1" />
-                        Last: {formatRelativeTime(deck.lastStudied)}
-                      </>
-                    ) : (
-                      <>
-                        <Calendar className="w-4 h-4 mr-1" />
-                        Created: {formatDate(deck.createdAt)}
-                      </>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Card mastery indicator */}
-                {deck.cards.length > 0 && (
-                  <div className="mt-3">
-                    <div className="flex justify-between text-xs text-gray-400 mb-1">
-                      <span>Card Mastery</span>
-                      <span>{Math.round((deck.cards.filter(card => card.confidence >= 2).length / deck.cards.length) * 100)}%</span>
-                    </div>
-                    <ProgressBar
-                      value={deck.cards.filter(card => card.confidence >= 2).length}
-                      max={deck.cards.length}
-                      size="sm"
-                      variant="success"
-                    />
-                  </div>
-                )}
-                
-                <div className="flex gap-2 mt-4">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="flex-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/study/${deck.id}`);
-                    }}
-                  >
-                    Study Now
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/decks/${deck.id}`);
-                    }}
-                  >
-                    View Deck
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        <DeckCard key={deck.id} deck={deck} />
       ))}
     </div>
   );
@@ -670,13 +641,14 @@ export const Dashboard: React.FC = () => {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             leftIcon={<Search className="w-4 h-4" />}
-            className="w-full sm:w-64"
+            className="w-full sm:w-64 border border-white/20 rounded-lg"
           />
           
           <Button
             variant="primary"
             onClick={() => navigate('/create')}
             leftIcon={<Plus className="w-4 h-4" />}
+            className="border border-white/10"
           >
             Create Deck
           </Button>
@@ -684,7 +656,7 @@ export const Dashboard: React.FC = () => {
       </div>
       
       {/* Navigation Tabs */}
-      <div className="flex border-b border-gray-700 mb-6">
+      <div className="flex border-b border-white/20 mb-6">
         <button
           className={`py-2 px-4 font-medium text-sm ${
             activeTab === 'overview' 
@@ -712,7 +684,7 @@ export const Dashboard: React.FC = () => {
       ) : (
         filteredDecks.length === 0 ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-full bg-background-tertiary border border-white/20 flex items-center justify-center mx-auto mb-4">
               <Book className="w-8 h-8 text-gray-500" />
             </div>
             <h2 className="text-xl font-bold mb-2">No Flashcard Decks</h2>
@@ -724,6 +696,7 @@ export const Dashboard: React.FC = () => {
                 variant="primary"
                 onClick={() => navigate('/create')}
                 leftIcon={<Plus className="w-4 h-4" />}
+                className="border border-white/20"
               >
                 Create Deck
               </Button>
