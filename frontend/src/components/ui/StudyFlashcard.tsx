@@ -24,7 +24,7 @@ export const StudyFlashcard: React.FC<StudyFlashcardProps> = ({
   const handleRateConfidence = (confidence: number) => {
     onRateConfidence(confidence);
     setIsFlipped(false);
-    onNext();
+    // Removed the onNext() call here because onRateConfidence already handles advancing to the next card
   };
   
   // Confidence labels and colors

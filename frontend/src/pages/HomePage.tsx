@@ -39,7 +39,7 @@ export const HomePage: React.FC = () => {
             <div className="w-10 h-10 rounded-lg bg-accent-primary/20 flex items-center justify-center">
               <Brain className="w-6 h-6 text-accent-primary" />
             </div>
-            <span className="text-xl font-bold">Flashy</span>
+            <span className="text-xl font-bold">FlashCardMasher</span>
           </div>
           
           <div className="hidden md:flex space-x-4">
@@ -74,7 +74,7 @@ export const HomePage: React.FC = () => {
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
                 Transform your study materials into interactive flashcards in seconds.
-                Powered by AI to help you learn faster and retain knowledge longer.
+                Powered by AI and created by Maheswar to help you learn faster and retain knowledge longer.
               </motion.p>
               
               <motion.div
@@ -176,7 +176,7 @@ export const HomePage: React.FC = () => {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-gray-800">
         <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-          <p>&copy; 2025 Flashy. All rights reserved.</p>
+          <p>&copy; 2025 FlashCardMasher by Maheswar. All rights reserved.</p>
         </div>
       </footer>
     </div>
