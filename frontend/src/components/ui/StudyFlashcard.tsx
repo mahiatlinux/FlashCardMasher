@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Flashcard, DifficultyLevel } from '../../types';
 import { Button } from './Button';
@@ -8,14 +8,22 @@ interface StudyFlashcardProps {
   card: Flashcard;
   onRateConfidence: (confidence: number) => void;
   onNext: () => void;
+  isChanging?: boolean; // Added prop to detect card change
 }
 
 export const StudyFlashcard: React.FC<StudyFlashcardProps> = ({
   card,
   onRateConfidence,
   onNext,
+  isChanging = false,
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
+  
+  // Reset flip state when card changes
+  useEffect(() => {
+    // When the card changes, ensure it shows the front side
+    setIsFlipped(false);
+  }, [card.id]); // Add card.id as dependency to reset when card changes
   
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
@@ -24,7 +32,7 @@ export const StudyFlashcard: React.FC<StudyFlashcardProps> = ({
   const handleRateConfidence = (confidence: number) => {
     onRateConfidence(confidence);
     setIsFlipped(false);
-    // Removed the onNext() call here because onRateConfidence already handles advancing to the next card
+    // DO NOT CALL onNext() HERE - onRateConfidence in StudyMode will handle advancing to the next card
   };
   
   // Confidence labels and colors
@@ -79,6 +87,7 @@ export const StudyFlashcard: React.FC<StudyFlashcardProps> = ({
                       "py-2 px-2 rounded-lg text-white text-sm font-medium transition-colors",
                       option.color
                     )}
+                    disabled={isChanging} // Disable buttons during transitions
                   >
                     {option.label}
                   </button>

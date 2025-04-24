@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, AlertTriangle, Check, X, Book, BarChart2, Clock, Tag } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -11,15 +11,25 @@ import { Flashcard, FlashcardDeck } from '../types';
 export const StudyMode: React.FC = () => {
   const { deckId } = useParams<{ deckId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const { getDeck, updateCardConfidence, recordStudySession, decks } = useFlashcardStore();
   
   // If deckId is provided, get that specific deck
   const deck = deckId ? getDeck(deckId) : null;
   
+  // Track if the session has been initialized to prevent unnecessary resets
+  const sessionInitializedRef = useRef<string | false>(false);
+  
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [studyCards, setStudyCards] = useState<Flashcard[]>([]);
   const [isComplete, setIsComplete] = useState(false);
+  
+  // Add state to track card transitions
+  const [isCardChanging, setIsCardChanging] = useState(false);
+  
+  // Add loading state when switching decks
+  const [isLoading, setIsLoading] = useState(false);
   
   // Study session stats
   const [stats, setStats] = useState({
@@ -31,7 +41,7 @@ export const StudyMode: React.FC = () => {
     endTime: null as Date | null
   });
   
-  // Reset study session state
+  // Reset study session state - but only when explicitly called
   const resetStudySession = () => {
     setCurrentCardIndex(0);
     setIsComplete(false);
@@ -45,23 +55,44 @@ export const StudyMode: React.FC = () => {
     });
   };
   
+  // Reset completion state immediately when URL changes
+  useEffect(() => {
+    // When the URL changes, reset completion state immediately
+    setIsComplete(false);
+    
+    // If we're going to a specific deck, set loading state
+    if (location.pathname.includes('/study/') && location.pathname !== `/study/${sessionInitializedRef.current}`) {
+      setIsLoading(true);
+      
+      // Reset loading state after a short delay
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 300);
+    }
+  }, [location.pathname]);
+  
   // Initialize study session if deck is present
   useEffect(() => {
     if (deck && deck.cards.length > 0) {
-      // Reset state when deck changes
-      resetStudySession();
-      // For now, just use all cards in order
-      // In a real app, you'd implement spaced repetition algorithm here
-      setStudyCards(deck.cards);
-      setStats(prev => ({
-        ...prev,
-        total: deck.cards.length
-      }));
+      // Only reset if the deck ID changed OR this is the first initialization
+      if (!sessionInitializedRef.current || sessionInitializedRef.current !== deckId) {
+        resetStudySession();
+        setStudyCards(deck.cards);
+        setStats(prev => ({
+          ...prev,
+          total: deck.cards.length
+        }));
+        
+        // Mark this deck as initialized
+        sessionInitializedRef.current = deckId;
+      }
     }
-  }, [deck, deckId]); // Added deckId as dependency to reset state when the URL param changes
+  }, [deck, deckId]); 
   
   // If no deckId is provided, render deck selection
   if (!deckId) {
+    // Clear session when viewing deck selection
+    sessionInitializedRef.current = false;
     return <DeckSelectionView decks={decks} navigate={navigate} />;
   }
   
@@ -117,14 +148,28 @@ export const StudyMode: React.FC = () => {
         incorrect: confidence < 2 ? prev.incorrect + 1 : prev.incorrect
       }));
       
+      // Advance to next card WITH blur transition
       handleNextCard();
     }
   };
   
   const handleNextCard = () => {
     if (currentCardIndex < studyCards.length - 1) {
-      setCurrentCardIndex(prevIndex => prevIndex + 1);
+      // Start the card transition with blur effect
+      setIsCardChanging(true);
+      
+      // Use setTimeout to create a delay before changing the card
+      setTimeout(() => {
+        // Just increment the index without resetting anything
+        setCurrentCardIndex(prevIndex => prevIndex + 1);
+        
+        // End the transition after a short delay to ensure smooth animation
+        setTimeout(() => {
+          setIsCardChanging(false);
+        }, 150);
+      }, 150);
     } else {
+      // Only complete the session at the very end of the deck
       completeStudySession();
     }
   };
@@ -141,13 +186,18 @@ export const StudyMode: React.FC = () => {
   };
   
   const handleRestartSession = () => {
+    // Explicitly reset the session only when user clicks "Study Again"
     resetStudySession();
   };
 
   // Navigate to study selection and reset state
   const navigateToStudySelection = () => {
-    // First reset the state so if we come back to this component it's fresh
-    resetStudySession();
+    // Immediately reset completion state to prevent flashing
+    setIsComplete(false);
+    
+    // Clear the initialization ref to ensure a fresh start when coming back
+    sessionInitializedRef.current = false;
+    
     // Then navigate to the study deck selection
     navigate('/study');
   };
@@ -284,13 +334,17 @@ export const StudyMode: React.FC = () => {
         </div>
       </div>
       
-      {currentCard && (
-        <StudyFlashcard
-          card={currentCard}
-          onRateConfidence={handleRateConfidence}
-          onNext={handleNextCard}
-        />
-      )}
+      <div className={`transition-all duration-300 ${isCardChanging ? 'opacity-0 blur-md' : 'opacity-100 blur-0'}`}>
+        {currentCard && (
+          <StudyFlashcard
+            key={currentCardIndex} // Add key to force re-render on card change
+            card={currentCard}
+            onRateConfidence={handleRateConfidence}
+            onNext={handleNextCard}
+            isChanging={isCardChanging}
+          />
+        )}
+      </div>
       
       <div className="mt-6 text-center">
         <Button
@@ -304,6 +358,18 @@ export const StudyMode: React.FC = () => {
       </div>
     </div>
   );
+  
+  // Show loading indicator when switching decks
+  if (isLoading) {
+    return (
+      <div className="py-4">
+        <h1 className="text-2xl font-bold mb-6 text-center">{deck.name}</h1>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary"></div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="py-4">
